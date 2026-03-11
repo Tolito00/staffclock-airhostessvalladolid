@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Staff Clock — Fichaje</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f4f0;
+  --white: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #888;
+  --border: #e0ddd8;
+  --green: #1a9e6e;
+  --green-bg: #edf7f3;
+  --red: #d94040;
+  --red-bg: #fdf0f0;
+  --orange: #e07020;
+  --orange-bg: #fdf4ec;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 18px;
+  --font: 'Outfit', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 48px;
+}
+
+/* SETUP BANNER */
+#setup-banner {
+  width: 100%;
+  max-width: 480px;
+  background: #fffbe6;
+  border: 1.5px dashed #f0c040;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 0.85rem;
+  color: #7a5c00;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  display: none;
+}
+#setup-banner strong { display: block; margin-bottom: 4px; font-size: 0.9rem; }
+#setup-banner a { color: #b07800; font-weight: 600; }
+
+/* HEADER */
+.header {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 38px; height: 38px;
+  background: var(--ink);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.brand-empresa {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.clock-display {
+  text-align: right;
+}
+
+#clock {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+
+#date-display {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* MAIN CARD */
+.main-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+/* STEPS */
+.step { display: none; padding: 32px 28px; }
+.step.active { display: block; }
+
+/* STEP 1 — Seleccionar empleado */
+.step-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.emp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.emp-card {
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--bg);
+  text-align: center;
+  position: relative;
+}
+
+.emp-card:hover { border-color: var(--ink); background: var(--white); }
+.emp-card.selected { border-color: var(--ink); background: var(--ink); color: var(--white); }
+.emp-card.active-shift { border-color: var(--orange); }
+.emp-card.active-shift .emp-dot { background: var(--orange); }
+
+.emp-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 auto 8px;
+  transition: background 0.18s;
+}
+
+.emp-card.selected .emp-avatar { background: rgba(255,255,255,0.15); }
+
+.emp-name { font-size: 0.88rem; font-weight: 600; }
+.emp-status { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.emp-card.selected .emp-status { color: rgba(255,255,255,0.6); }
+.emp-card.active-shift .emp-status { color: var(--orange); }
+
+.emp-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  position: absolute;
+  top: 10px; right: 10px;
+}
+.emp-card.selected .emp-dot { background: rgba(255,255,255,0.4); }
+
+/* STEP 2 — PIN */
+.pin-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.pin-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pin-name { font-size: 1.2rem; font-weight: 700; }
+.pin-subtitle { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.pin-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: all 0.15s;
+}
+.pin-dot.filled { background: var(--ink); border-color: var(--ink); }
+
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pin-btn {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  font-family: var(--font);
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pin-btn:hover { background: var(--ink); color: white; border-color: var(--ink); }
+.pin-btn:active { transform: scale(0.93); }
+.pin-btn.del { font-size: 1rem; }
+
+/* STEP 3 — Acción */
+.action-header { text-align: center; margin-bottom: 28px; }
+.action-greeting { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+.action-info { font-size: 0.85rem; color: var(--muted); }
+
+.action-status {
+  background: var(--orange-bg);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  display: none;
+}
+.action-status.visible { display: flex; }
+.action-status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--orange);
+  flex-shrink: 0;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.action-status-text { font-size: 0.85rem; font-weight: 600; color: var(--orange); }
+.action-status-time { font-family: var(--mono); font-size: 0.78rem; color: var(--orange); margin-top: 1px; }
+
+.action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+.action-btn {
+  padding: 18px 14px;
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.action-btn .btn-icon { font-size: 1.6rem; }
+.action-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.btn-entrada { background: var(--green-bg); color: var(--green); }
+.btn-entrada:hover:not(:disabled) { background: var(--green); color: white; transform: translateY(-2px); }
+
+.btn-salida { background: var(--red-bg); color: var(--red); }
+.btn-salida:hover:not(:disabled) { background: var(--red); color: white; transform: translateY(-2px); }
+
+.btn-back {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-back:hover { border-color: var(--ink); color: var(--ink); }
+
+/* STEP 4 — Confirmación */
+.confirm-wrap {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.confirm-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+
+.confirm-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+.confirm-msg { font-size: 0.95rem; color: var(--muted); margin-bottom: 8px; }
+.confirm-hours { font-family: var(--mono); font-size: 1.3rem; font-weight: 600; color: var(--green); margin-bottom: 24px; }
+.confirm-ts { font-size: 0.72rem; color: #bbb; font-family: var(--mono); margin-bottom: 28px; }
+
+.btn-nuevo {
+  width: 100%;
+  padding: 14px;
+  background: var(--ink);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-nuevo:hover { background: #333; }
+
+/* ERROR */
+.error-msg {
+  background: var(--red-bg);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* LOADING */
+.loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 28px;
+  gap: 14px;
+}
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.loading-text { font-size: 0.9rem; color: var(--muted); }
+
+/* STATUS BAR */
+.status-bar {
+  width: 100%;
+  max-width: 480px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+
+.status-bar-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.active-list { display: flex; flex-direction: column; gap: 8px; }
+
+.active-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.active-item-name { font-weight: 600; }
+.active-item-since { font-family: var(--mono); font-size: 0.78rem; color: var(--orange); }
+
+.no-active { font-size: 0.85rem; color: var(--muted); text-align: center; padding: 8px 0; }
+
+/* URL CONFIG */
+.url-config {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 16px;
+}
+
+.url-config details {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+}
+
+.url-config summary {
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.url-config summary::before { content: '⚙ '; }
+
+.url-config input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  outline: none;
+}
+.url-config input:focus { border-color: var(--ink); }
+
+.url-config .btn-save-url {
+  margin-top: 8px;
+  padding: 9px 20px;
+  background: var(--ink);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP BANNER (visible si no hay URL configurada) -->
+<div id="setup-banner">
+  <strong>⚠ Configura el enlace de tu empresa</strong>
+  Despliega tu Google Apps Script y pega la URL en el campo de configuración de abajo.
+  <a href="setup.html" target="_blank">Ver instrucciones →</a>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">⏱</div>
+    <div>
+      <div class="brand-name">Staff Clock</div>
+      <div class="brand-empresa" id="empresa-nombre">Cargando…</div>
+    </div>
+  </div>
+  <div class="clock-display">
+    <div id="clock">00:00:00</div>
+    <div id="date-display"></div>
+  </div>
+</div>
+
+<!-- MAIN CARD -->
+<div class="main-card">
+
+  <!-- LOADING -->
+  <div id="step-loading" class="step active">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Conectando…</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: EMPLEADOS -->
+  <div id="step-1" class="step">
+    <div class="step-label">¿Quién eres?</div>
+    <div class="emp-grid" id="emp-grid"></div>
+  </div>
+
+  <!-- STEP 2: PIN -->
+  <div id="step-2" class="step">
+    <div class="pin-header">
+      <div class="pin-avatar" id="pin-avatar">?</div>
+      <div>
+        <div class="pin-name" id="pin-name">Empleado</div>
+        <div class="pin-subtitle">Introduce tu PIN de 4 dígitos</div>
+      </div>
+    </div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+    <div class="error-msg" id="pin-error">PIN incorrecto. Inténtalo de nuevo.</div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn del" onclick="pinBack()">⌫</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn del" onclick="goStep(1)">✕</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: ACCIÓN -->
+  <div id="step-3" class="step">
+    <div class="action-header">
+      <div class="action-greeting" id="action-greeting">¡Hola!</div>
+      <div class="action-info" id="action-info">¿Qué quieres registrar?</div>
+    </div>
+    <div class="action-status" id="action-status">
+      <div class="action-status-dot"></div>
+      <div>
+        <div class="action-status-text">Turno en curso</div>
+        <div class="action-status-time" id="action-status-time"></div>
+      </div>
+    </div>
+    <div class="error-msg" id="action-error"></div>
+    <div class="action-btns">
+      <button class="action-btn btn-entrada" id="btn-entrada" onclick="fichar('entrada')">
+        <span class="btn-icon">✅</span>
+        Entrada
+      </button>
+      <button class="action-btn btn-salida" id="btn-salida" onclick="fichar('salida')">
+        <span class="btn-icon">🚪</span>
+        Salida
+      </button>
+    </div>
+    <button class="btn-back" onclick="goStep(1)">← Cambiar empleado</button>
+  </div>
+
+  <!-- STEP 4: CONFIRMACIÓN -->
+  <div id="step-4" class="step">
+    <div class="confirm-wrap">
+      <div class="confirm-icon" id="confirm-icon">✅</div>
+      <div class="confirm-title" id="confirm-title">¡Registrado!</div>
+      <div class="confirm-msg" id="confirm-msg"></div>
+      <div class="confirm-hours" id="confirm-hours"></div>
+      <div class="confirm-ts" id="confirm-ts"></div>
+      <button class="btn-nuevo" onclick="goStep(1)">Nuevo fichaje</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="status-bar" style="display:none">
+  <div class="status-bar-title">Trabajando ahora</div>
+  <div class="active-list" id="active-list"></div>
+</div>
+
+<!-- URL CONFIG -->
+<div class="url-config">
+  <details id="config-details">
+    <summary>Configuración del servidor</summary>
+    <input type="url" id="script-url" placeholder="https://script.google.com/macros/s/…/exec">
+    <br>
+    <button class="btn-save-url" onclick="saveUrl()">Guardar y conectar</button>
+  </details>
+</div>
+
+<script>
+// ── HELPERS ──────────────────────────────────────────────────
+// Google Sheets devuelve horas como "Sat Dec 30 1899 HH:mm:ss GMT+..." 
+// Esta función extrae solo HH:mm:ss de ese string feo
+function formatearHora(val) {
+  if (!val) return '';
+  // Si ya tiene formato HH:mm:ss limpio, devolverlo tal cual
+  if (/^\d{2}:\d{2}:\d{2}$/.test(String(val))) return String(val);
+  // Si es el string feo de Date de Sheets, extraer la hora
+  const match = String(val).match(/(\d{2}:\d{2}:\d{2})/);
+  if (match) return match[1];
+  return String(val);
+}
+
+// ── CONFIG ────────────────────────────────────────────────────
+let SCRIPT_URL = localStorage.getItem('staffclock_url') || '';
+let empleados = [];
+let selectedEmp = null;
+let pinValue = '';
+let statusActivos = [];
+let geoData = { lat: '', lng: '', direccion: '' };
+
+// Capturar geolocalización en segundo plano al cargar
+function captureGeo() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      geoData.lat = pos.coords.latitude.toFixed(6);
+      geoData.lng = pos.coords.longitude.toFixed(6);
+      // Reverse geocoding con API pública (no requiere key)
+      fetch('https://nominatim.openstreetmap.org/reverse?lat=' + geoData.lat + '&lon=' + geoData.lng + '&format=json')
+        .then(r => r.json())
+        .then(d => { geoData.direccion = d.display_name ? d.display_name.slice(0,80) : ''; })
+        .catch(() => {});
+    },
+    function() { /* geolocalización denegada — continuar sin ella */ },
+    { timeout: 8000, maximumAge: 60000 }
+  );
+}
+
+// ── HELPER: extraer HH:mm:ss de cualquier formato de hora ────
+function limpiarHora(val) {
+  if (!val) return '';
+  const str = String(val);
+  // Si ya es HH:mm:ss devolver tal cual
+  if (/^\d{2}:\d{2}:\d{2}$/.test(str)) return str;
+  // Si es un Date string como "Sat Dec 30 1899 16:20:59 GMT..."
+  const match = str.match(/(\d{2}:\d{2}:\d{2})/);
+  if (match) return match[1];
+  return str;
+}
+
+// ── CLOCK ─────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('es-ES',{hour12:false});
+  const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  document.getElementById('date-display').textContent =
+    `${days[n.getDay()]} ${n.getDate()} ${months[n.getMonth()]}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── STEPS ─────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-'+n).classList.add('active');
+  if(n === 1) { selectedEmp = null; pinValue = ''; refreshPinDots(); }
+  if(n === 2) { pinValue = ''; refreshPinDots(); document.getElementById('pin-error').classList.remove('visible'); }
+  if(n === 3) loadActionStep();
+}
+
+// ── API ───────────────────────────────────────────────────
+async function api(params) {
+  if(!SCRIPT_URL) throw new Error('Sin URL configurada');
+  const url = new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+  const res = await fetch(url.toString(), {redirect:'follow'});
+  return res.json();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+async function init() {
+  if(!SCRIPT_URL) {
+    document.getElementById('setup-banner').style.display = 'block';
+    document.getElementById('empresa-nombre').textContent = 'Sin configurar';
+    document.getElementById('step-loading').classList.remove('active');
+    document.getElementById('step-1').classList.add('active');
+    document.getElementById('emp-grid').innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-size:0.88rem">Configura el servidor para comenzar</div>';
+    return;
+  }
+  try {
+    const [cfg, emps, status] = await Promise.all([
+      api({action:'getConfig'}),
+      api({action:'getEmpleados'}),
+      api({action:'getStatus'})
+    ]);
+    if(cfg.ok) document.getElementById('empresa-nombre').textContent = cfg.config.empresa || 'Mi Empresa';
+    if(emps.ok) { empleados = emps.empleados; renderEmpleados(); }
+    if(status.ok) { statusActivos = status.activos; renderStatusBar(); }
+    goStep(1);
+  } catch(e) {
+    document.getElementById('step-loading').innerHTML =
+      `<div class="loading-wrap" style="color:var(--red)">
+        <div style="font-size:2rem">⚠️</div>
+        <div>Error al conectar.<br><small style="color:var(--muted)">${e.message}</small></div>
+      </div>`;
+  }
+}
+
+// ── EMPLEADOS ─────────────────────────────────────────────
+function renderEmpleados() {
+  const grid = document.getElementById('emp-grid');
+  if(!empleados.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted)">No hay empleados configurados</div>';
+    return;
+  }
+  grid.innerHTML = empleados.map(e => {
+    const activo = statusActivos.find(a => a.empleado_id === e.id);
+    const initials = e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<div class="emp-card ${activo?'active-shift':''}" onclick="selectEmp('${e.id}')">
+      <div class="emp-dot ${activo?'filled':''}"></div>
+      <div class="emp-avatar">${initials}</div>
+      <div class="emp-name">${e.nombre.split(' ')[0]}</div>
+      <div class="emp-status">${activo ? 'Trabajando desde '+formatearHora(activo.entrada) : 'Libre'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectEmp(id) {
+  selectedEmp = empleados.find(e => e.id === id);
+  if(!selectedEmp) return;
+  document.getElementById('pin-avatar').textContent =
+    selectedEmp.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
+  document.getElementById('pin-name').textContent = selectedEmp.nombre;
+  goStep(2);
+}
+
+// ── PIN ───────────────────────────────────────────────────
+function pinPress(d) {
+  if(pinValue.length >= 4) return;
+  pinValue += d;
+  refreshPinDots();
+  if(pinValue.length === 4) setTimeout(verifyPin, 150);
+}
+
+function pinBack() {
+  pinValue = pinValue.slice(0,-1);
+  refreshPinDots();
+}
+
+function refreshPinDots() {
+  document.querySelectorAll('.pin-dot').forEach((d,i) => {
+    d.classList.toggle('filled', i < pinValue.length);
+  });
+}
+
+function verifyPin() {
+  if(!selectedEmp) return;
+  if(String(selectedEmp.pin) === String(pinValue)) {
+    document.getElementById('pin-error').classList.remove('visible');
+    goStep(3);
+  } else {
+    pinValue = '';
+    refreshPinDots();
+    document.getElementById('pin-error').classList.add('visible');
+    // Shake animation
+    document.getElementById('pin-dots').style.animation = 'none';
+    setTimeout(()=>{ document.getElementById('pin-dots').style.animation = ''; }, 10);
+  }
+}
+
+// ── ACCIÓN ────────────────────────────────────────────────
+async function loadActionStep() {
+  if(!selectedEmp) return;
+  document.getElementById('action-greeting').textContent = `¡Hola, ${selectedEmp.nombre.split(' ')[0]}!`;
+  document.getElementById('action-info').textContent = 'Comprobando estado…';
+  document.getElementById('action-error').classList.remove('visible');
+  document.getElementById('btn-entrada').disabled = true;
+  document.getElementById('btn-salida').disabled = true;
+
+  // Siempre consultar el servidor para tener el estado real y actualizado
+  try {
+    const statusRes = await api({action:'getStatus'});
+    if(statusRes.ok) {
+      statusActivos = statusRes.activos;
+      renderEmpleados();
+      renderStatusBar();
+    }
+  } catch(e) { /* continuar con estado local si falla la red */ }
+
+  const activo = statusActivos.find(a => String(a.empleado_id) === String(selectedEmp.id));
+  const statusEl = document.getElementById('action-status');
+  const btnE = document.getElementById('btn-entrada');
+  const btnS = document.getElementById('btn-salida');
+
+  if(activo) {
+    statusEl.classList.add('visible');
+    document.getElementById('action-status-time').textContent = `Entrada: ${formatearHora(activo.entrada)}`;
+    document.getElementById('action-info').textContent = 'Tienes un turno en curso';
+    btnE.disabled = true;
+    btnS.disabled = false;
+  } else {
+    statusEl.classList.remove('visible');
+    document.getElementById('action-info').textContent = '¿Qué quieres registrar?';
+    btnE.disabled = false;
+    btnS.disabled = true;
+  }
+}
+
+async function fichar(tipo) {
+  const errEl = document.getElementById('action-error');
+  errEl.classList.remove('visible');
+  document.getElementById('btn-entrada').disabled = true;
+  document.getElementById('btn-salida').disabled = true;
+
+  const dispositivo = navigator.userAgent.includes('Mobile') ? 'móvil' : 'escritorio';
+
+  try {
+    const res = await api({
+      action: tipo,
+      emp_id: selectedEmp.id,
+      pin: selectedEmp.pin,
+      dispositivo,
+      lat: geoData.lat,
+      lng: geoData.lng,
+      direccion: geoData.direccion
+    });
+
+    if(!res.ok) {
+      errEl.textContent = res.error;
+      errEl.classList.add('visible');
+      loadActionStep();
+      return;
+    }
+
+    // Confirmación
+    document.getElementById('confirm-icon').textContent = tipo === 'entrada' ? '✅' : '👋';
+    document.getElementById('confirm-title').textContent = tipo === 'entrada' ? '¡Entrada registrada!' : '¡Hasta pronto!';
+    document.getElementById('confirm-msg').textContent = res.mensaje;
+    document.getElementById('confirm-hours').textContent = res.horas || '';
+    const geoTxt = geoData.lat ? ` · 📍${geoData.lat},${geoData.lng}` : '';
+    const hashTxt = res.hash ? ` · #${res.hash}` : '';
+    document.getElementById('confirm-ts').textContent = `Registrado a las ${res.hora} · ${new Date().toLocaleDateString('es-ES')}${geoTxt}${hashTxt}`;
+    goStep(4);
+
+    // Actualizar status
+    const statusRes = await api({action:'getStatus'});
+    if(statusRes.ok) { statusActivos = statusRes.activos; renderEmpleados(); renderStatusBar(); }
+
+  } catch(e) {
+    errEl.textContent = 'Error de conexión. Comprueba tu internet.';
+    errEl.classList.add('visible');
+    loadActionStep();
+  }
+}
+
+// ── STATUS BAR ────────────────────────────────────────────
+function renderStatusBar() {
+  const bar = document.getElementById('status-bar');
+  const list = document.getElementById('active-list');
+  if(!statusActivos.length) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'block';
+  list.innerHTML = statusActivos.map(a =>
+    `<div class="active-item">
+      <span class="active-item-name">● ${a.nombre}</span>
+      <span class="active-item-since">desde ${formatearHora(a.entrada)}</span>
+    </div>`
+  ).join('');
+}
+
+// ── URL CONFIG ────────────────────────────────────────────
+function saveUrl() {
+  const val = document.getElementById('script-url').value.trim();
+  if(!val) return;
+  localStorage.setItem('staffclock_url', val);
+  SCRIPT_URL = val;
+  document.getElementById('config-details').removeAttribute('open');
+  document.getElementById('setup-banner').style.display = 'none';
+  document.getElementById('step-loading').classList.add('active');
+  document.getElementById('step-1').classList.remove('active');
+  init();
+}
+
+// Prellenar URL si existe
+document.getElementById('script-url').value = SCRIPT_URL;
+if(!SCRIPT_URL) document.getElementById('config-details').setAttribute('open','');
+
+// ── START ─────────────────────────────────────────────────
+captureGeo();
+init();
+</script>
+</body>
+</html>
