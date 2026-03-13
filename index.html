@@ -107,7 +107,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--ink); min-h
 
 <div class="header">
   <div class="header-brand">
-    <div class="header-logo">&#9203;</div>
+    <img src="logo.png" id="header-logo-img" style="height:44px;width:auto;display:none" alt="Logo">
+    <div class="header-logo" id="header-logo-icon">&#9203;</div>
     <div>
       <div class="header-title" id="empresa-nombre">Staff Clock</div>
       <div class="header-sub">Control de jornada</div>
@@ -257,7 +258,15 @@ async function init() {
   if (!SCRIPT_URL) { document.getElementById('config-details').open=true; goStep(1); return; }
   try {
     const [cfg, emp] = await Promise.all([api({action:'getConfig'}), api({action:'getEmpleados'})]);
-    if (cfg.ok && cfg.config.empresa) document.getElementById('empresa-nombre').textContent = cfg.config.empresa;
+    if (cfg.ok && cfg.config.empresa) {
+      document.getElementById('empresa-nombre').textContent = cfg.config.empresa;
+      // Mostrar logo si existe
+      var logoImg = document.getElementById('header-logo-img');
+      var logoIcon = document.getElementById('header-logo-icon');
+      logoImg.onload = function() { logoImg.style.display='block'; logoIcon.style.display='none'; };
+      logoImg.onerror = function() { logoImg.style.display='none'; logoIcon.style.display='block'; };
+      logoImg.src = 'logo.png';
+    }
     if (emp.ok) { empleados = emp.empleados; renderEmpleados(); }
     goStep(1);
     loadStatusBar();
