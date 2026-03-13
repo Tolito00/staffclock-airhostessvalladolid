@@ -54,6 +54,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--ink); min-h
 .form-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
 .form-input { width: 100%; padding: 11px 14px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 11px; color: var(--ink); font-family: var(--mono); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
 .form-input:focus { border-color: var(--ink); background: white; }
+.form-input.time-active { border-color: var(--ink); background: white; animation: blink-border 1s step-end infinite; }
+@keyframes blink-border {
+  0%, 100% { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(26,26,26,0.15); }
+  50% { border-color: var(--border); box-shadow: none; }
+}
 .form-row { margin-bottom: 16px; }
 
 .fichaje-emp { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1.5px solid var(--border); }
@@ -210,12 +215,17 @@ body { font-family: var(--font); background: var(--bg); color: var(--ink); min-h
 </div>
 
 <script>
-// Auto-formato HH:MM en inputs de hora
+// Auto-formato HH:MM en inputs de hora con salto automatico al siguiente campo
 document.addEventListener('input', function(e) {
-  if (!e.target.matches('input[placeholder="09:00"], input[placeholder="14:00"]')) return;
+  if (!e.target.id || (!e.target.id.startsWith('ent-') && !e.target.id.startsWith('sal-'))) return;
   var v = e.target.value.replace(/[^0-9]/g, '');
   if (v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2,4);
   e.target.value = v;
+  // Cuando se completa HH:MM, saltar al siguiente campo vacio
+  if (v.length === 5) {
+    e.target.classList.remove('time-active');
+    setTimeout(() => activarSiguienteCampo(), 100);
+  }
 });
 
 let SCRIPT_URL  = localStorage.getItem('staffclock_url') || '';
@@ -386,6 +396,7 @@ async function initFichajeForm() {
   } catch(e) {
     addTramo();
   }
+  setTimeout(() => activarSiguienteCampo(), 150);
 }
 
 async function onFechaChange() {
@@ -437,6 +448,23 @@ function addTramo() {
     </div>`;
   document.getElementById('tramos-container').appendChild(div);
   if (tramoCount >= 3) document.getElementById('btn-add-tramo').style.display = 'none';
+  // Activar primer campo vacio del tramo recien creado
+  setTimeout(() => activarSiguienteCampo(), 50);
+}
+
+function activarSiguienteCampo() {
+  // Quitar clase activa de todos
+  document.querySelectorAll('.time-active').forEach(el => el.classList.remove('time-active'));
+  // Buscar primer input de hora vacio
+  const inputs = document.querySelectorAll('input[id^="ent-"], input[id^="sal-"]');
+  for (let i = 0; i < inputs.length; i++) {
+    if (!inputs[i].value) {
+      inputs[i].classList.add('time-active');
+      inputs[i].focus();
+      inputs[i].select();
+      return;
+    }
+  }
 }
 
 function removeTramo(n) {
